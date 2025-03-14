@@ -20,8 +20,7 @@ Main folder/
 
 input file moet dus input.mp4 heten en in 'data' staan.
 
-Python versie: 3.9
-
+## Python versie: 3.9
 #### Installeren in terminal via pip:
 - versie van moviepy onder 2.0 [numpy 1.26.4]
 - optimum
@@ -37,5 +36,6 @@ ffmpeg ook downloaden van website: https://www.gyan.dev/ffmpeg/builds/
 - git-essentials.7z
 
 #CUDA toolkit van NVIDIA
-https://developer.nvidia.com/cuda-downloads?target_os=Windows&target_arch=x86_64&target_version=10&target_type=exe_network
+- check voor juiste versie per GPU
+    - https://developer.nvidia.com/cuda-downloads?target_os=Windows&target_arch=x86_64&target_version=10&target_type=exe_network
 

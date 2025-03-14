@@ -4,43 +4,65 @@ import os
 import subprocess
 
 # Instellingen
-MAX_SENTENCE_LENGTH = 100  # Maximale lengte in tekens van een ondertitelregel
-SRT_PATH = "data/subtitles.srt"
+MAX_SENTENCE_LENGTH = 50  # Maximale lengte in tekens per ondertitelregel
+MIN_SENTENCE_LENGTH = 20   # Minimale lengte per regel voordat er een nieuwe regel wordt afgedwongen
+SRT_PATH = "data/subtitles.srt"  # Zorg dat de ondertitels in de juiste map blijven
 AUDIO_PATH = "data/audio.wav"
 OUTPUT_VIDEO = "data/final_video.mp4"
 INPUT_VIDEO = "data/output.mp4"
 
 def run_whisper():
-    """Voert Whisper uit en genereert een SRT-bestand."""
-    subprocess.run(["whisper", AUDIO_PATH, "--model", "large", "--output_format", "srt"], check=True)
+    """Voert Whisper uit en genereert een SRT-bestand in de juiste map."""
+    subprocess.run([
+        "whisper", AUDIO_PATH, "--model", "large", "--output_format", "srt", "--output_dir", "data"
+    ], check=True)
 
 def correct_grammar(text):
     """Corrigeert grammatica en hoofdletters in ondertitels."""
-    # Zet alle ' i ' om naar ' I ' correct gebruik
-    text = re.sub(r'\bi\b', 'I', text)
+    # Maak gebruik van een regex om alle relevante woorden te vervangen
+    corrections = {
+        r'\bi\b': 'I',
+        r"\bi'm\b": "I'm",
+        r"\bi've\b": "I've",
+        r"\bi'd\b": "I'd",
+        r"\bi'll\b": "I'll"
+    }
+    for pattern, replacement in corrections.items():
+        text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
     return text
 
-def split_sentences_on_length(sentences, max_length=MAX_SENTENCE_LENGTH):
+def determine_break_symbol(sentence, next_sentence):
+    """Bepaalt welk leesteken gebruikt moet worden bij het afbreken van de zin."""
+    if sentence.endswith(("!", "?")):
+        return " "  # Geen extra leesteken nodig
+    if next_sentence.startswith(("because", "so", "therefore", "thus")):
+        return ":"  # Dubbele punt als de volgende zin een verklaring of gevolg is
+    if len(next_sentence.split()) < 5:
+        return " —"  # Afbreekstreepje als de volgende zin kort is
+    return ","  # Standaard: een komma als de zin doorloopt
+
+def split_sentences_on_length(sentences, max_length=MAX_SENTENCE_LENGTH, min_length=MIN_SENTENCE_LENGTH):
     """Splits lange zinnen op, maar alleen op logische plekken."""
     adjusted_sentences = []
     
-    for sentence in sentences:
+    for i, sentence in enumerate(sentences):
         if len(sentence) <= max_length:
             adjusted_sentences.append(sentence)
             continue
 
         words = sentence.split()
-        split_points = [i for i in range(3, len(words) - 3) if words[i].endswith((".", "?", "!"))]
+        split_points = [idx for idx in range(3, len(words) - 3) if words[idx].endswith((".", "?", "!"))]
         
         if not split_points:
-            split_points = [len(words) // 2]  # Als er geen split-punten zijn, splitsen in het midden
+            split_points = [len(words) // 2]  # Als er geen split-punten zijn, splits in het midden
         
         last_split = 0
         for split in split_points:
-            if split - last_split > max_length:
-                adjusted_sentences.append(" ".join(words[last_split:split]))
+            if split - last_split > min_length:
+                next_sentence = " ".join(words[split:])
+                adjusted_sentences.append(" ".join(words[last_split:split]) + determine_break_symbol(words[last_split:split], next_sentence))
                 last_split = split
-        
+
         adjusted_sentences.append(" ".join(words[last_split:]))
 
     return adjusted_sentences
@@ -48,7 +70,7 @@ def split_sentences_on_length(sentences, max_length=MAX_SENTENCE_LENGTH):
 def process_srt():
     """Verwerkt het SRT-bestand: corrigeert grammatica en past zinnen aan."""
     if not os.path.exists(SRT_PATH):
-        print("FOUT: SRT-bestand niet gevonden. Controleer Whisper-output.")
+        print(f"FOUT: {SRT_PATH} niet gevonden. Controleer Whisper-output.")
         return
 
     with open(SRT_PATH, "r", encoding="utf-8") as f:
@@ -56,6 +78,8 @@ def process_srt():
 
     processed_subtitles = []
     buffer = []
+    previous_speaker = None
+
     for line in lines:
         line = line.strip()
         
@@ -67,7 +91,11 @@ def process_srt():
                 buffer = []
             processed_subtitles.append(line)
         elif line:
-            buffer.append(line)
+            if "Speaker" in line and line != previous_speaker:
+                buffer.append(f'"{line}"')  # Gebruik aanhalingstekens bij nieuwe sprekers
+                previous_speaker = line
+            else:
+                buffer.append(line)
     
     if buffer:
         corrected_sentence = correct_grammar(" ".join(buffer))
@@ -96,13 +124,13 @@ def add_subtitles_to_video():
     ], check=True)
 
 if __name__ == "__main__":
-    print("🔹 Whisper wordt uitgevoerd om ondertitels te genereren...")
+    print("Whisper wordt uitgevoerd om ondertitels te genereren...")
     run_whisper()
     
-    print("🔹 Ondertitels worden verwerkt...")
+    print("Ondertitels worden verwerkt...")
     process_srt()
     
-    print("🔹 Ondertitels worden aan de video toegevoegd...")
+    print("Ondertitels worden aan de video toegevoegd...")
     add_subtitles_to_video()
     
-    print("✅ Video met ondertitels is gegenereerd.")
+    print("Video met ondertitels is gegenereerd.")
