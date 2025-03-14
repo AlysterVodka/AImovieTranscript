@@ -11,9 +11,9 @@ Werkt alleen om ondertitels te genereren op het moment.
 - video_edit.py                # Knipt de video
 - add_subtitles.py             # Voegt ondertitels toe
 - data/
--   --> input.mp4                # De originele video
--   --> timestamps.json          # Belangrijke tijdstempels (wordt automatisch gegenereerd)
--   --> output.mp4               # De bewerkte video
+    -   input.mp4                # De originele video
+    -   timestamps.json          # Belangrijke tijdstempels (wordt automatisch gegenereerd)
+    -   output.mp4               # De bewerkte video
 
 input file moet dus input.mp4 heten en in 'data' staan.
 
