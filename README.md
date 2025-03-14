@@ -20,6 +20,8 @@ Main folder/
 
 input file moet dus input.mp4 heten en in 'data' staan.
 
+Python versie: 3.9
+
 #### Installeren in terminal via pip:
 - versie van moviepy onder 2.0 [numpy 1.26.4]
 - optimum
