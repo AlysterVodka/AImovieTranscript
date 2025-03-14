@@ -16,7 +16,7 @@ Main folder/
     ├── input.mp4           # De originele video
     ├── timestamps.json     # Belangrijke tijdstempels (wordt automatisch gegenereerd)
     └── output.mp4          # De bewerkte video
-
+```
 
 input file moet dus input.mp4 heten en in 'data' staan.
 
